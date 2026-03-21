@@ -26,14 +26,14 @@
                 <p>心情: <span id="cat-mood">0</span>%</p>
                 <p>佩戴: <span id="cat-item">无</span></p>
                 
-                <div id="cat-item-details" style="display:none;" class="item-details">
-                    包浆: <span id="cat-item-polish">0.0</span>%<br>
+                <div id="cat-item-details" style="visibility:hidden;" class="item-details">
+                    包浆: <span id="cat-item-polish">0.00</span>%<br>
                     估值: <span id="cat-item-value">0</span> 金币
                 </div>
                 
                 <div class="flex-btn-group">
                     <button id="btn-feed">喂罐头 (5)</button>
-                    <button id="btn-feed-salmon" class="btn-salmon" style="display:none;">喂三文鱼 (0)</button>
+                    <button id="btn-feed-salmon" class="btn-salmon" style="display:none;">喂三文鱼</button>
                     <button id="btn-play">逗猫玩</button>
                 </div>
                 <div class="flex-btn-group" style="margin-top: 5px;">
@@ -91,7 +91,8 @@
         <div id="canvas-container">
             <!-- 增加一层用来叠加随时间变化的光照遮罩 -->
             <div id="day-night-overlay"></div>
-            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            <!-- 高度设为 480，优化比例 -->
+            <canvas id="gameCanvas" width="800" height="480"></canvas>
         </div>
     </div>
 
@@ -106,7 +107,7 @@
                 <div class="shop-section">
                     <h4>🪑 家具 (改变猫咪行为)</h4>
                     <button id="btn-buy-cat-bed">猫窝 (100金币) [+0.02/s]</button>
-                    <button id="btn-buy-scratch-board">特大猫抓板 (150金币) [+0.05/s]</button>
+                    <button id="btn-buy-scratch-board">大号猫抓板 (150金币) [+0.05/s]</button>
                     <button id="btn-buy-cat-tree">豪华猫爬架 (200金币) [+0.1/s]</button>
                 </div>
                 <div class="shop-section">
@@ -122,6 +123,12 @@
         </div>
     </div>
 
-    <script src="main.js"></script>
+    <!-- Load Modular Scripts in sequence -->
+    <script src="js/data.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/cat.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>

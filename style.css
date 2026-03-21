@@ -62,6 +62,7 @@ h1 {
     border-left: 2px solid #f1c40f;
     padding-left: 5px;
     font-family: monospace;
+    height: 38px; /* Fixed height to prevent layout jumping */
 }
 
 .flex-btn-group {
@@ -213,8 +214,11 @@ li {
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0,0,0,0.6);
     flex: 1;
-    min-width: 400px; /* 防止被挤得太小 */
-    height: 100%;
+    min-width: 400px;
+    /* Aspect ratio for 800x480 */
+    aspect-ratio: 800 / 480; 
+    height: auto;
+    max-height: 100%;
     position: relative;
 }
 
