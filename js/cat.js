@@ -82,7 +82,7 @@ class Cat {
                 in_bed: { x: 500, y: 340 },     // Inside bed
                 on_sofa_def: { x: 150, y: 230 },
                 on_desk_def: { x: 450, y: 200 },
-                on_sofa_cozy: { x: 180, y: 230 },
+                on_oven_cozy: { x: 250, y: 150 }, // Jump to oven
                 on_desk_f2: { x: 300, y: 220 },
                 on_piano_f2: { x: 500, y: 200 }
             };
@@ -93,8 +93,11 @@ class Cat {
                 if (GameState.placedFurniture.some(f => f.type === "catTree")) possibleStates.push("on_cattree");
                 if (GameState.placedFurniture.some(f => f.type === "scratchBoard")) possibleStates.push("scratching");
                 if (GameState.placedFurniture.some(f => f.type === "catBed")) possibleStates.push("in_bed");
-                if (GameState.currentRoom === "default" || GameState.currentRoom === "cozy" || (GameState.currentRoom === "garden" && GameState.currentSubScene === "f1")) {
+                if (GameState.currentRoom === "default" || (GameState.currentRoom === "garden" && GameState.currentSubScene === "f1")) {
                     possibleStates.push("on_sofa");
+                }
+                if (GameState.currentRoom === "cozy") {
+                    possibleStates.push("on_oven"); // replacing sofa logic with oven jump
                 }
                 if (GameState.currentRoom === "default" || (GameState.currentRoom === "garden" && GameState.currentSubScene === "f2")) {
                     possibleStates.push("on_desk");
@@ -114,10 +117,13 @@ class Cat {
                 this.jumpTo(targets.scratching.x, targets.scratching.y, "scratching", 600);
                 return;
             } else if (nextState === "on_sofa") {
-                let tx = GameState.currentRoom === "default" ? targets.on_sofa_def.x : targets.on_sofa_cozy.x;
-                let ty = GameState.currentRoom === "default" ? targets.on_sofa_def.y : targets.on_sofa_cozy.y;
+                let tx = GameState.currentRoom === "default" ? targets.on_sofa_def.x : targets.on_sofa_def.x; // default
+                let ty = GameState.currentRoom === "default" ? targets.on_sofa_def.y : targets.on_sofa_def.y;
                 if(GameState.currentSubScene === "f1") { tx=480; ty=210; }
                 this.jumpTo(tx, ty, "on_sofa", 700);
+                return;
+            } else if (nextState === "on_oven") {
+                this.jumpTo(targets.on_oven_cozy.x, targets.on_oven_cozy.y, "on_sofa", 700); // reuse on_sofa logic state for resting
                 return;
             } else if (nextState === "on_desk") {
                 let tx = GameState.currentRoom === "default" ? targets.on_desk_def.x : targets.on_desk_f2.x;

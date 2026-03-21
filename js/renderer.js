@@ -147,6 +147,110 @@ const Renderer = {
         ctx.restore();
     },
 
+    // 新增：星露谷风格的厨房大烤箱 (Oven)
+    drawOven(ctx, x, y) {
+        ctx.save(); ctx.translate(x, y);
+        
+        // 投影 Drop Shadow
+        ctx.fillStyle = "rgba(0,0,0,0.3)";
+        ctx.beginPath(); ctx.ellipse(0, 5, 55, 10, 0, 0, Math.PI*2); ctx.fill();
+        
+        // 烤箱主体
+        ctx.fillStyle = "#ecf0f1"; // 浅灰色烤箱漆面
+        ctx.beginPath(); ctx.roundRect(-45, -90, 90, 95, 4); ctx.fill();
+        // 底部深色边缘 (厚度感)
+        ctx.fillStyle = "#bdc3c7"; 
+        ctx.fillRect(-45, 0, 90, 5); 
+        
+        // 黑色炉架 (Stove Top)
+        ctx.fillStyle = "#2c3e50"; 
+        ctx.fillRect(-45, -90, 90, 15);
+        ctx.fillStyle = "#e74c3c"; // 燃烧的火苗点缀
+        ctx.beginPath(); ctx.arc(-20, -82, 3, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(20, -82, 3, 0, Math.PI*2); ctx.fill();
+        
+        // 控制面板区
+        ctx.fillStyle = "#34495e"; 
+        ctx.fillRect(-45, -75, 90, 20);
+        // 旋钮 (Knobs)
+        ctx.fillStyle = "#ecf0f1"; 
+        ctx.beginPath(); ctx.arc(-30, -65, 4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(-15, -65, 4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(15, -65, 4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(30, -65, 4, 0, Math.PI*2); ctx.fill();
+        
+        // 烤箱玻璃门 (Oven Door)
+        ctx.fillStyle = "#2c3e50"; 
+        ctx.beginPath(); ctx.roundRect(-35, -45, 70, 35, 4); ctx.fill();
+        // 内置火光 (Inner Glow)
+        ctx.fillStyle = "rgba(230, 126, 34, 0.4)"; 
+        ctx.beginPath(); ctx.roundRect(-30, -40, 60, 25, 2); ctx.fill();
+        
+        // 烤箱把手 (Handle)
+        ctx.fillStyle = "#bdc3c7"; 
+        ctx.beginPath(); ctx.roundRect(-25, -50, 50, 4, 2); ctx.fill();
+
+        ctx.restore();
+    },
+
+    // 新增：星露谷风格的放着南瓜的橱柜 (Cabinet with Pumpkin)
+    drawKitchenCabinet(ctx, x, y) {
+        ctx.save(); ctx.translate(x, y);
+        
+        // 投影 Drop Shadow
+        ctx.fillStyle = "rgba(0,0,0,0.3)";
+        ctx.beginPath(); ctx.ellipse(0, 5, 60, 15, 0, 0, Math.PI*2); ctx.fill();
+        
+        // 橱柜主体 (木制)
+        ctx.fillStyle = "#c08c5c"; // 浅色木材
+        ctx.beginPath(); ctx.roundRect(-55, -80, 110, 85, 2); ctx.fill();
+        // 左边阴影，右边高光 (体积感)
+        ctx.fillStyle = "rgba(0,0,0,0.1)"; ctx.fillRect(-55, -80, 55, 85); 
+        ctx.fillStyle = "rgba(255,255,255,0.1)"; ctx.fillRect(0, -80, 55, 85); 
+        
+        // 底部深色边缘 (厚度感)
+        ctx.fillStyle = "#5c3a21"; 
+        ctx.fillRect(-55, 0, 110, 5); 
+
+        // 柜门细节
+        ctx.strokeStyle = "#8b5a2b"; 
+        ctx.lineWidth = 3;
+        ctx.strokeRect(-45, -70, 40, 65); // 左门
+        ctx.strokeRect(5, -70, 40, 65);   // 右门
+        // 柜门把手
+        ctx.fillStyle = "#2c3e50"; 
+        ctx.beginPath(); ctx.arc(-15, -40, 3, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(15, -40, 3, 0, Math.PI*2); ctx.fill();
+
+        // --- 绘制橱柜顶部的南瓜 (Pumpkin) ---
+        ctx.translate(0, -80); // 移动到橱柜顶部
+        // 南瓜投影
+        ctx.fillStyle = "rgba(0,0,0,0.3)";
+        ctx.beginPath(); ctx.ellipse(0, 2, 22, 6, 0, 0, Math.PI*2); ctx.fill();
+        
+        // 南瓜身体 (胖乎乎的多段圆角矩形组合)
+        ctx.fillStyle = "#e67e22"; // 亮橘色
+        ctx.beginPath(); ctx.ellipse(0, -12, 20, 15, 0, 0, Math.PI*2); ctx.fill();
+        // 南瓜阴影条纹 (体积感纹理)
+        ctx.fillStyle = "#d35400"; // 深橘色
+        ctx.beginPath(); ctx.ellipse(-8, -12, 6, 14, 0, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(8, -12, 6, 14, 0, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(0, -12, 5, 15, 0, 0, Math.PI*2); ctx.fill();
+        
+        // 南瓜蒂 (Stem)
+        ctx.fillStyle = "#27ae60"; // 绿色
+        ctx.beginPath(); ctx.roundRect(-3, -32, 6, 8, 2); ctx.fill();
+        // 藤蔓 (Vine)
+        ctx.strokeStyle = "#2ecc71"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, -28); ctx.quadraticCurveTo(15, -35, 10, -20); ctx.stroke();
+        
+        // 南瓜高光
+        ctx.fillStyle = "rgba(255,255,255,0.4)";
+        ctx.beginPath(); ctx.ellipse(-10, -18, 4, 2, -Math.PI/6, 0, Math.PI*2); ctx.fill();
+
+        ctx.restore();
+    },
+
     drawSceneBackground(ctx) {
         const cw = this.canvas.width;  // 640
         const ch = this.canvas.height; // 480
@@ -163,19 +267,50 @@ const Renderer = {
             this.drawDesk(ctx, 450, 210);
         } 
         else if (GameState.currentRoom === "cozy") {
-            ctx.fillStyle = "#f5deb3"; ctx.fillRect(0, 0, cw, floorY); 
-            for (let i = 0; i < cw; i += 60) { ctx.fillStyle = "rgba(139,69,19,0.1)"; ctx.fillRect(i, 0, 10, floorY); }
-            ctx.fillStyle = "#8b4513"; ctx.fillRect(0, floorY-10, cw, 10); 
-            ctx.fillStyle = "#d2b48c"; ctx.fillRect(0, floorY, cw, ch - floorY); 
+            // 1. 格子花纹墙纸 (Plaid Wallpaper)
+            ctx.fillStyle = "#e8d5c4"; // 柔和的米黄色底色
+            ctx.fillRect(0, 0, cw, floorY); 
+            ctx.fillStyle = "rgba(139, 90, 43, 0.1)"; // 低对比度的暖棕色线条
+            for (let i = 0; i < cw; i += 30) { ctx.fillRect(i, 0, 4, floorY); } // 垂直线
+            for (let j = 0; j < floorY; j += 30) { ctx.fillRect(0, j, cw, 4); } // 水平线
+
+            // 踢脚线
+            ctx.fillStyle = "#5c3a21"; 
+            ctx.fillRect(0, floorY-12, cw, 12); 
+            ctx.fillStyle = "rgba(0,0,0,0.3)";
+            ctx.fillRect(0, floorY-2, cw, 2); // 踢脚线阴影
+
+            // 2. 木纹拼花地板 (Parquet Wood Floor)
+            ctx.fillStyle = "#8b5a2b"; // 温暖的胡桃木色
+            ctx.fillRect(0, floorY, cw, ch - floorY); 
             
-            this.drawWindow(ctx, 50, 30, 150, 140, "cozy");
-            // Painting
-            ctx.fillStyle = "#8b4513"; ctx.fillRect(400, 40, 120, 80); ctx.fillStyle="#ecf0f1"; ctx.fillRect(410, 50, 100, 60);
-            ctx.fillStyle = "#e74c3c"; ctx.beginPath(); ctx.arc(460, 80, 15, 0, Math.PI*2); ctx.fill();
-            // Lamp
-            ctx.fillStyle = "#2c3e50"; ctx.fillRect(580, 70, 5, 140); ctx.fillStyle="#f1c40f"; ctx.beginPath(); ctx.moveTo(560, 70); ctx.lineTo(605, 70); ctx.lineTo(590, 30); ctx.lineTo(575, 30); ctx.fill();
-            
-            this.drawDiningTable(ctx, 350, 240);
+            // 地板深度渐变阴影
+            const grad = ctx.createLinearGradient(0, floorY, 0, floorY + 80);
+            grad.addColorStop(0, "rgba(0,0,0,0.4)");
+            grad.addColorStop(1, "rgba(0,0,0,0)");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, floorY, cw, 80);
+
+            // 拼花木纹细节 (错落的横竖线条)
+            ctx.strokeStyle = "rgba(60, 30, 10, 0.4)"; // 深棕色缝隙
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < cw; i += 60) {
+                for (let j = floorY; j < ch; j += 40) {
+                    // 交错拼花：偶尔画横线，偶尔画竖线
+                    if ((i + j) % 3 === 0) {
+                        ctx.moveTo(i, j); ctx.lineTo(i + 60, j); // 横向缝隙
+                    } else {
+                        ctx.moveTo(i, j); ctx.lineTo(i, j + 40); // 纵向缝隙
+                    }
+                }
+            }
+            ctx.stroke();
+
+            // 绘制场景物件
+            this.drawWindow(ctx, 80, 40, 120, 130, "cozy");
+            this.drawKitchenCabinet(ctx, 420, 240); // 放南瓜的橱柜
+            this.drawOven(ctx, 250, 240);           // 大烤箱
         }
         else if (GameState.currentRoom === "garden") {
             if (GameState.currentSubScene === "f1") {
