@@ -12,7 +12,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Setup initial game state
     UI.addLog("🐾 欢迎来到像素猫猫文玩店！");
-    GameState.cats.push(new Cat("orange", 400, 300));
+    GameState.cats.push(new Cat("orange", 320, 360));
     GameState.selectedCatIndex = 0;
     
     UI.updateInventoryDropdown();
@@ -41,7 +41,7 @@ function updateWorldTime() {
 function gameLoop(time) {
     try {
         let dt = time - GameState.lastTime;
-        if (dt > 50) dt = 50; // Cap dt to prevent tunneling / cat disappearing
+        if (dt > 50) dt = 50; // Cap dt to prevent tunneling
         GameState.lastTime = time;
 
         // Manual Polishing logic
@@ -55,7 +55,7 @@ function gameLoop(time) {
                 UI.updateInventoryDropdown();
                 
                 if (Math.random() < 0.05) {
-                    GameState.floatingTexts.push({ x: Renderer.canvas.width/2 + (Math.random()*100-50), y: 450 + (Math.random()*100-50), text: "✨", life: 0.5 });
+                    GameState.floatingTexts.push({ x: Renderer.canvas.width/2 + (Math.random()*100-50), y: 400 + (Math.random()*100-50), text: "✨", life: 0.5 });
                 }
             }
         }
@@ -92,10 +92,10 @@ function gameLoop(time) {
                 const ctx = Renderer.ctx;
                 ctx.save();
                 const centerX = Renderer.canvas.width / 2;
-                const centerY = 400; // Adjusted for new 480 height
+                const centerY = 400; // Adjusted for 480 height
                 ctx.translate(centerX, centerY);
                 
-                // Backdrop glow for hand polishing
+                // Backdrop glow
                 ctx.fillStyle = GameState.isPolishingCanvas ? "rgba(241, 196, 15, 0.2)" : "rgba(255,255,255,0.1)";
                 ctx.beginPath(); ctx.arc(0,0, 100, 0, Math.PI*2); ctx.fill();
 
@@ -108,14 +108,18 @@ function gameLoop(time) {
                 const beadRadius = data.size * 3;
                 for (let i = 0; i < beadCount; i++) {
                     const angle = Math.PI * 2 * (i / beadCount);
-                    const bx = Math.cos(angle) * 75; // Adjusted dist
+                    const bx = Math.cos(angle) * 75; 
                     const by = Math.sin(angle) * 75;
                     
                     let beadColor = [150, 150, 150]; 
                     
                     if (data.isDuobao && item.beadColors && Array.isArray(item.beadColors) && item.beadColors.length > 0) {
                         const bCol = item.beadColors[i % item.beadColors.length];
-                        if(Array.isArray(bCol) && bCol.length >= 3) beadColor = [...bCol];
+                        if (bCol.isSingleGradient) {
+                             beadColor = bCol; // pass the object
+                        } else if(Array.isArray(bCol) && bCol.length >= 3) {
+                             beadColor = [...bCol];
+                        }
                     } else if (data.colorStart && data.colorEnd && data.colorStart.length >= 3 && data.colorEnd.length >= 3) {
                         beadColor[0] = Math.floor(data.colorStart[0] + (data.colorEnd[0] - data.colorStart[0]) * p);
                         beadColor[1] = Math.floor(data.colorStart[1] + (data.colorEnd[1] - data.colorStart[1]) * p);

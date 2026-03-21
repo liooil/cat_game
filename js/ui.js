@@ -40,15 +40,15 @@ const UI = {
         };
 
         this.safeBind("btn-buy-cat-tree", "click", () => buyAndLog(GAME_DATA.FURNITURE.catTree.cost, GAME_DATA.FURNITURE.catTree.name, () => { 
-            GameState.placedFurniture.push({ type: 'catTree', x: 200, y: 340 }); 
+            GameState.placedFurniture.push({ type: 'catTree', x: 130, y: 380 }); 
             GameState.totalFurnitureBonus += GAME_DATA.FURNITURE.catTree.bonus; 
         }));
         this.safeBind("btn-buy-scratch-board", "click", () => buyAndLog(GAME_DATA.FURNITURE.scratchBoard.cost, GAME_DATA.FURNITURE.scratchBoard.name, () => { 
-            GameState.placedFurniture.push({ type: 'scratchBoard', x: 450, y: 360 }); 
+            GameState.placedFurniture.push({ type: 'scratchBoard', x: 300, y: 390 }); 
             GameState.totalFurnitureBonus += GAME_DATA.FURNITURE.scratchBoard.bonus; 
         }));
         this.safeBind("btn-buy-cat-bed", "click", () => buyAndLog(GAME_DATA.FURNITURE.catBed.cost, GAME_DATA.FURNITURE.catBed.name, () => { 
-            GameState.placedFurniture.push({ type: 'catBed', x: 650, y: 350 }); 
+            GameState.placedFurniture.push({ type: 'catBed', x: 500, y: 380 }); 
             GameState.totalFurnitureBonus += GAME_DATA.FURNITURE.catBed.bonus; 
         }));
         this.safeBind("btn-buy-salmon", "click", () => buyAndLog(GAME_DATA.CONSUMABLES.salmon.cost, GAME_DATA.CONSUMABLES.salmon.name, () => GameState.salmonCount++));
@@ -74,8 +74,8 @@ const UI = {
         this.safeBind("btn-buy-room-cozy", "click", () => buyRoom('cozy'));
         this.safeBind("btn-buy-room-garden", "click", () => buyRoom('garden'));
 
-        this.safeBind("btn-scene-f1", "click", () => { GameState.currentSubScene = "f1"; this.addLog("来到了一楼大厅"); this.update(); });
-        this.safeBind("btn-scene-f2", "click", () => { GameState.currentSubScene = "f2"; this.addLog("来到了二楼书房"); this.update(); });
+        this.safeBind("btn-scene-f1", "click", () => { GameState.currentSubScene = "f1"; this.addLog("来到了一楼"); this.update(); });
+        this.safeBind("btn-scene-f2", "click", () => { GameState.currentSubScene = "f2"; this.addLog("来到了二楼"); this.update(); });
         this.safeBind("btn-scene-garden", "click", () => { GameState.currentSubScene = "garden"; this.addLog("来到了室外花园"); this.update(); });
 
         this.safeBind("btn-adopt", "click", () => {
@@ -83,7 +83,7 @@ const UI = {
                 GameState.gold -= 100;
                 const breedKeys = Object.keys(GAME_DATA.BREEDS);
                 const randomBreed = breedKeys[Math.floor(Math.random() * breedKeys.length)];
-                GameState.cats.push(new Cat(randomBreed, 100 + Math.random() * 600, 300));
+                GameState.cats.push(new Cat(randomBreed, 50 + Math.random() * 540, 300));
                 GameState.selectedCatIndex = GameState.cats.length - 1;
                 this.addLog(`领养了一只【${GAME_DATA.BREEDS[randomBreed].name}】！`);
                 this.update();
@@ -94,9 +94,31 @@ const UI = {
         itemKeys.forEach(key => {
             this.safeBind(`btn-buy-${key}`, "click", () => {
                 const itemData = GAME_DATA.ITEMS[key];
+                if(!itemData) return;
                 buyAndLog(itemData.cost, itemData.name, () => {
                     let beadColors = null;
-                    if (itemData.isDuobao) beadColors = Array.from({length: 18}, () => [100+Math.random()*100, 80+Math.random()*80, 60+Math.random()*60]);
+                    if (key === "bodhi") {
+                        const style = Math.floor(Math.random() * 3); // 0, 1, 2
+                        let c1 = MORANDI_COLORS[Math.floor(Math.random()*MORANDI_COLORS.length)];
+                        let c2 = MORANDI_COLORS[Math.floor(Math.random()*MORANDI_COLORS.length)];
+                        beadColors = [];
+                        if (style === 0) { // Solid Morandi
+                            for(let i=0;i<18;i++) beadColors.push(c1);
+                        } else if (style === 1) { // Bead-to-bead gradient
+                            for(let i=0; i<18; i++) {
+                                let ratio = i/17;
+                                beadColors.push([
+                                    c1[0]*(1-ratio) + c2[0]*ratio,
+                                    c1[1]*(1-ratio) + c2[1]*ratio,
+                                    c1[2]*(1-ratio) + c2[2]*ratio
+                                ]);
+                            }
+                        } else { // Single bead internal gradient
+                            for(let i=0; i<18; i++) beadColors.push({ isSingleGradient: true, c1: c1, c2: c2 });
+                        }
+                    } else if (itemData.isDuobao) {
+                        beadColors = Array.from({length: 18}, () => [100+Math.random()*100, 80+Math.random()*80, 60+Math.random()*60]);
+                    }
                     GameState.playerInventory.push({ type: key, polish: 0, beadColors });
                     GameState.selectedItemIndex = GameState.playerInventory.length - 1;
                     this.updateInventoryDropdown();
@@ -165,7 +187,6 @@ const UI = {
                     cat.itemPolish = item.polish;
                     cat.itemBeadColors = item.beadColors;
                     
-                    // Remove from inventory
                     GameState.playerInventory.splice(GameState.selectedItemIndex, 1);
                     if (GameState.selectedItemIndex >= GameState.playerInventory.length) {
                         GameState.selectedItemIndex = GameState.playerInventory.length - 1;
@@ -200,7 +221,6 @@ const UI = {
         this.safeBind("btn-manual-polish", "mouseup", () => GameState.isPolishingCanvas = false);
         this.safeBind("btn-manual-polish", "mouseleave", () => GameState.isPolishingCanvas = false);
         
-        // Canvas interactions
         const canvas = document.getElementById("gameCanvas");
         if(canvas) {
             canvas.addEventListener("mousedown", (e) => {
@@ -213,6 +233,7 @@ const UI = {
                 let clickedCat = false;
                 for (let i = GameState.cats.length - 1; i >= 0; i--) {
                     const c = GameState.cats[i];
+                    // Relaxed hit box for 640x480 ratio
                     if (mouseX > c.x - 50 && mouseX < c.x + 50 && mouseY > c.y - 70 && mouseY < c.y + 30) {
                         GameState.selectedCatIndex = i;
                         clickedCat = true;
@@ -224,7 +245,8 @@ const UI = {
                     }
                 }
                 
-                if (!clickedCat && mouseY > 300) {
+                // Allow manual polish clicking on bottom section
+                if (!clickedCat && mouseY > 330) {
                     GameState.isPolishingCanvas = true;
                 }
             });
@@ -291,9 +313,7 @@ const UI = {
             
             if (targetCat.item && GAME_DATA.ITEMS[targetCat.item]) { 
                 this.elements.catItem.innerText = GAME_DATA.ITEMS[targetCat.item].name; 
-                // Fix layout jumping: Use visibility instead of display:none
                 this.elements.catItemDetails.style.visibility = "visible"; 
-                // Real-time polish formatting
                 this.elements.catItemPolish.innerText = targetCat.itemPolish.toFixed(2); 
                 this.elements.catItemValue.innerText = Math.floor(GAME_DATA.ITEMS[targetCat.item].baseValue * (1 + (targetCat.itemPolish / 100) * 5)); 
             } else { 

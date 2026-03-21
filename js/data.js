@@ -1,3 +1,13 @@
+const MORANDI_COLORS = [
+    [163, 172, 161], // 鼠尾草绿
+    [184, 158, 151], // 灰豆沙
+    [166, 172, 186], // 雾霾蓝
+    [204, 192, 179], // 暖灰棕
+    [191, 184, 196], // 香芋紫
+    [176, 196, 222], // 莫兰迪蓝
+    [222, 184, 135]  // 沙驼色
+];
+
 const GAME_DATA = {
     BREEDS: {
         orange: { name: "橘猫", body: "#e67e22", stripe: "#d35400", ear: "#d35400", tail: "#d35400", paws: "#e67e22" },
@@ -18,7 +28,7 @@ const GAME_DATA = {
     FURNITURE: {
         catTree: { name: "豪华猫爬架", cost: 200, bonus: 0.1 },
         scratchBoard: { name: "大号猫抓板", cost: 150, bonus: 0.05 },
-        catBed: { name: "猫窝", cost: 100, bonus: 0.02 }
+        catBed: { name: "双色猫窝", cost: 100, bonus: 0.02 }
     },
     ROOMS: {
         default: { name: "默认小屋" },

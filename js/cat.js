@@ -11,12 +11,32 @@ class Cat {
         this.itemPolish = 0; 
         this.itemBeadColors = null;
         this.polishBuff = null; 
+        
+        // Jump variables
+        this.jumpStartX = 0;
+        this.jumpStartY = 0;
+        this.jumpTargetX = 0;
+        this.jumpTargetY = 0;
+        this.jumpTime = 0;
+        this.jumpProgress = 0;
+        this.nextStateAfterJump = "sit";
+    }
+
+    jumpTo(targetX, targetY, nextState, duration = 800) {
+        this.state = "jumping";
+        this.jumpStartX = this.x;
+        this.jumpStartY = this.y;
+        this.jumpTargetX = targetX;
+        this.jumpTargetY = targetY;
+        this.jumpTime = duration;
+        this.jumpProgress = 0;
+        this.nextStateAfterJump = nextState;
+        
+        // Face the target direction
+        if (targetX < this.x) this.vx = -0.04; else this.vx = 0.04;
     }
 
     update(dt) {
-        this.stateTime -= dt;
-        
-        // Handle buff
         if (this.polishBuff) {
             this.polishBuff.duration -= dt;
             if (this.polishBuff.duration <= 0) {
@@ -25,21 +45,54 @@ class Cat {
             }
         }
 
-        // Determine if we are in Garden outdoor scene
-        let isOutdoor = GameState.currentRoom === "garden" && GameState.currentSubScene === "garden";
-        let floorY = isOutdoor ? 350 : 320; // Grass is lower than indoor floor
+        // --- JUMPING STATE MACHINE ---
+        if (this.state === "jumping") {
+            this.jumpProgress += dt;
+            if (this.jumpProgress >= this.jumpTime) {
+                // Landed
+                this.x = this.jumpTargetX;
+                this.y = this.jumpTargetY;
+                this.state = this.nextStateAfterJump;
+                this.stateTime = 3000 + Math.random()*2000;
+            } else {
+                let t = this.jumpProgress / this.jumpTime;
+                this.x = this.jumpStartX + (this.jumpTargetX - this.jumpStartX) * t;
+                // Parabola: arch height scales with distance
+                let h = 40 + Math.abs(this.jumpTargetX - this.jumpStartX) * 0.2;
+                this.y = this.jumpStartY + (this.jumpTargetY - this.jumpStartY) * t - Math.sin(t * Math.PI) * h;
+            }
+            this.processPolish(dt);
+            return; // Skip normal movement updates
+        }
 
-        // State Machine (with Furniture interaction)
+        this.stateTime -= dt;
+
+        let isOutdoor = GameState.currentRoom === "garden" && GameState.currentSubScene === "garden";
+        let floorY = isOutdoor ? 350 : 360; 
+
+        // --- NORMAL STATE MACHINE ---
         if (this.stateTime <= 0) {
             const r = Math.random();
             let possibleStates = ["sit", "walk_left", "walk_right", "sleep"];
             
-            // Interaction logic only applies to indoor rooms (excluding garden outdoor)
+            // Furniture targets mapping (adjusted for 640x480 resolution)
+            const targets = {
+                on_cattree: { x: 130, y: 220 }, // Cat tree platform
+                scratching: { x: 300, y: 350 }, // Next to scratchboard
+                in_bed: { x: 500, y: 340 },     // Inside bed
+                on_sofa_def: { x: 150, y: 230 },
+                on_desk_def: { x: 450, y: 200 },
+                on_sofa_cozy: { x: 180, y: 230 },
+                on_desk_f2: { x: 300, y: 220 },
+                on_piano_f2: { x: 500, y: 200 }
+            };
+
+            let nextState = "";
+
             if (!isOutdoor) {
                 if (GameState.placedFurniture.some(f => f.type === "catTree")) possibleStates.push("on_cattree");
                 if (GameState.placedFurniture.some(f => f.type === "scratchBoard")) possibleStates.push("scratching");
                 if (GameState.placedFurniture.some(f => f.type === "catBed")) possibleStates.push("in_bed");
-                // Sofa & Desk
                 if (GameState.currentRoom === "default" || GameState.currentRoom === "cozy" || (GameState.currentRoom === "garden" && GameState.currentSubScene === "f1")) {
                     possibleStates.push("on_sofa");
                 }
@@ -48,59 +101,65 @@ class Cat {
                 }
             }
 
-            this.state = possibleStates[Math.floor(Math.random() * possibleStates.length)];
+            nextState = possibleStates[Math.floor(Math.random() * possibleStates.length)];
             
+            // Should we jump to the target?
+            if (nextState === "on_cattree") {
+                this.jumpTo(targets.on_cattree.x, targets.on_cattree.y, "on_cattree", 800);
+                return;
+            } else if (nextState === "in_bed") {
+                this.jumpTo(targets.in_bed.x, targets.in_bed.y, "in_bed", 600);
+                return;
+            } else if (nextState === "scratching") {
+                this.jumpTo(targets.scratching.x, targets.scratching.y, "scratching", 600);
+                return;
+            } else if (nextState === "on_sofa") {
+                let tx = GameState.currentRoom === "default" ? targets.on_sofa_def.x : targets.on_sofa_cozy.x;
+                let ty = GameState.currentRoom === "default" ? targets.on_sofa_def.y : targets.on_sofa_cozy.y;
+                if(GameState.currentSubScene === "f1") { tx=480; ty=210; }
+                this.jumpTo(tx, ty, "on_sofa", 700);
+                return;
+            } else if (nextState === "on_desk") {
+                let tx = GameState.currentRoom === "default" ? targets.on_desk_def.x : targets.on_desk_f2.x;
+                let ty = GameState.currentRoom === "default" ? targets.on_desk_def.y : targets.on_desk_f2.y;
+                if(GameState.currentSubScene === "f2" && Math.random()>0.5) { tx=targets.on_piano_f2.x; ty=targets.on_piano_f2.y; } // jump to piano sometimes
+                this.jumpTo(tx, ty, "on_desk", 700);
+                return;
+            }
+
+            // Normal floor states
+            this.state = nextState;
             if (this.state === "sit") { this.stateTime = 3000 + Math.random()*2000; this.vx = 0; }
             else if (this.state.includes("walk")) { this.stateTime = 3000 + Math.random()*2000; this.vx = (this.state === "walk_left" ? -0.04 : 0.04); }
-            else if (this.state === "sleep" || this.state === "in_bed") { this.stateTime = 6000 + Math.random()*4000; this.vx = 0; }
-            else if (this.state === "scratching") { this.stateTime = 4000; this.vx = 0; }
-            else { this.stateTime = 5000; this.vx = 0; } // on_sofa, on_desk, on_cattree
+            else if (this.state === "sleep") { this.stateTime = 6000 + Math.random()*4000; this.vx = 0; }
         }
 
-        // Movement & Collision
+        // --- MOVEMENT ---
         if (this.state.includes("walk")) {
             this.x += this.vx * dt;
             if (this.x < 50) { this.x = 50; this.vx *= -1; this.state = "walk_right"; }
-            if (this.x > 800 - 50) { this.x = 800 - 50; this.vx *= -1; this.state = "walk_left"; } // 800 is canvas width
+            if (this.x > 640 - 50) { this.x = 640 - 50; this.vx *= -1; this.state = "walk_left"; } // 640 canvas width
             
-            // Smoothly move towards floorY if not already there
+            // Ease back to floor Y if walking
             if (this.y < floorY) this.y += 0.1 * dt;
             else if (this.y > floorY + 30) this.y -= 0.1 * dt;
-            else {
-                // Occasional wander up/down
-                if(Math.random() < 0.01) this.y += (Math.random() > 0.5 ? 1 : -1) * 10;
-            }
-            if(this.y > 450) this.y = 450; // Max depth
-
-        } else {
-            // Snap to specific interaction points if not walking
-            if (this.state === "on_cattree") { this.x = 200; this.y = 190; } // Matches tree platform
-            else if (this.state === "scratching") { this.x = 420; this.y = 290; } // Next to scratchboard
-            else if (this.state === "in_bed") { this.x = 650; this.y = 310; } // In bed
-            else if (this.state === "on_sofa") { 
-                // Context aware sofa placement
-                if (GameState.currentRoom === "default") { this.x = 180; this.y = 230; }
-                else if (GameState.currentRoom === "cozy") { this.x = 250; this.y = 240; } // Dining chair area actually, but we'll use it
-                else { this.x = 650; this.y = 210; } // Garden f1 sofa
-            }
-            else if (this.state === "on_desk") { 
-                if (GameState.currentRoom === "default") { this.x = 600; this.y = 200; }
-                else { this.x = 400; this.y = 220; } // Garden f2 desk
-            }
-            else {
-                // If just sitting/sleeping on floor, ensure it's on the floor
-                if (this.y < floorY) this.y += 0.5 * dt;
-            }
+            else if(Math.random() < 0.01) this.y += (Math.random() > 0.5 ? 1 : -1) * 10;
+            
+            if(this.y > 450) this.y = 450; 
+        } else if (this.state === "sit" || this.state === "sleep" || this.state === "play") {
+            // Drop to floor if floating
+            if (this.y < floorY) this.y += 0.3 * dt;
         }
 
-        // Mood decay
         this.mood = Math.max(0, this.mood - (dt / 1000) * 0.1);
+        this.processPolish(dt);
+    }
 
-        // Polish item
+    processPolish(dt) {
         if (this.item && GAME_DATA.ITEMS[this.item]) {
-            let polishRate = 0.5; // default sit/sleep
+            let polishRate = 0.5;
             if (this.state === "play" || this.state === "scratching") polishRate = 2.0;
-            else if (this.state.includes("walk") || this.state === "on_cattree") polishRate = 1.0;
+            else if (this.state.includes("walk") || this.state === "on_cattree" || this.state === "jumping") polishRate = 1.0;
             
             const moodFactor = this.mood > 50 ? 1.0 : (this.mood > 20 ? 0.5 : 0.1);
             const buffMultiplier = this.polishBuff ? this.polishBuff.multiplier : 1.0;
@@ -118,44 +177,51 @@ class Cat {
         const c = GAME_DATA.BREEDS[this.breed] || GAME_DATA.BREEDS["orange"]; 
         const isSleep = this.state === "sleep" || this.state === "in_bed" || this.state === "on_cattree";
         const isScratch = this.state === "scratching";
+        const isJump = this.state === "jumping";
         
-        // No vertical bounce for tail, just smooth body sway
         let bounceY = this.state.includes("walk") ? Math.sin(Date.now() / 150) * 1.5 : 0;
         
         const bW = 24 * scale; const bH = isSleep ? 8 * scale : 12 * scale; const bY = isSleep ? -8 * scale : -12 * scale;
         
         if (isSelected) {
-            ctx.strokeStyle = "rgba(241, 196, 15, 0.8)";
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = "rgba(241, 196, 15, 0.8)"; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.ellipse(0, 10, bW/1.5, 6*scale, 0, 0, Math.PI*2); ctx.stroke();
         }
 
-        // Drop shadow
+        // Shadow - scales down when jumping
+        let shadowScale = isJump ? Math.max(0.5, 1 - Math.abs(this.jumpProgress/this.jumpTime - 0.5)*1.5) : 1;
         ctx.fillStyle = "rgba(0,0,0,0.2)";
-        ctx.beginPath(); ctx.ellipse(0, 5, bW/2, 4*scale, 0, 0, Math.PI*2); ctx.fill();
+        let shadowY = isJump ? (this.jumpStartY + (this.jumpTargetY - this.jumpStartY)*(this.jumpProgress/this.jumpTime) - this.y) : 5;
+        ctx.beginPath(); ctx.ellipse(0, shadowY, (bW/2)*shadowScale, 4*scale*shadowScale, 0, 0, Math.PI*2); ctx.fill();
 
         ctx.translate(0, -bounceY);
+        
+        // Stretch slightly when jumping
+        if(isJump) {
+            let stretch = 1 + Math.abs(this.jumpTargetX - this.jumpStartX)/500;
+            ctx.scale(stretch, 1/stretch);
+        }
+        
         if (this.state === "walk_left" || this.vx < 0) ctx.scale(-1, 1);
 
-        // Tail: Left-right slight swing when walking, still otherwise
+        // Tail: Smooth sway
         ctx.fillStyle = c.tail; 
         if (isSleep) {
             ctx.fillRect(-bW / 2 - 8 * scale, bY + bH - 3 * scale, 8 * scale, 3 * scale);
         } else {
-            let tailSway = this.state.includes("walk") ? Math.sin(Date.now() / 200) * 3 * scale : 0;
-            ctx.beginPath();
-            ctx.roundRect(-bW / 2 - 3 * scale + tailSway, bY - 4 * scale, 3 * scale, 10 * scale, 2);
-            ctx.fill();
+            let tailSway = this.state.includes("walk") || isJump ? Math.sin(Date.now() / 200) * 3 * scale : 0;
+            ctx.beginPath(); ctx.roundRect(-bW / 2 - 3 * scale + tailSway, bY - 4 * scale, 3 * scale, 10 * scale, 2); ctx.fill();
         }
         
         // Back Legs
         ctx.fillStyle = c.paws; 
         if (!isSleep) { 
-            ctx.beginPath(); ctx.roundRect(-bW / 2 + 2 * scale, bY + bH - 2*scale, 3 * scale, 4 * scale, 2); ctx.fill();
-            ctx.beginPath(); ctx.roundRect(bW / 2 - 6 * scale, bY + bH - 2*scale, 3 * scale, 4 * scale, 2); ctx.fill();
+            let jumpTuck = isJump ? -2*scale : 0;
+            ctx.beginPath(); ctx.roundRect(-bW / 2 + 2 * scale, bY + bH - 2*scale + jumpTuck, 3 * scale, 4 * scale, 2); ctx.fill();
+            ctx.beginPath(); ctx.roundRect(bW / 2 - 6 * scale, bY + bH - 2*scale + jumpTuck, 3 * scale, 4 * scale, 2); ctx.fill();
         }
         
-        // Fluffy Body (Rounded rect)
+        // Body
         ctx.fillStyle = c.body; 
         ctx.beginPath(); ctx.roundRect(-bW / 2, bY, bW, bH, 4*scale); ctx.fill();
         
@@ -172,8 +238,9 @@ class Cat {
         if (!isSleep) {
             ctx.fillStyle = c.paws;
             let scratchReach = isScratch ? -Math.abs(Math.sin(Date.now()/100))*4*scale : 0;
-            ctx.beginPath(); ctx.roundRect(-bW / 2 + 7 * scale, bY + bH - 1*scale + scratchReach, 3 * scale, 3.5 * scale, 1); ctx.fill();
-            ctx.beginPath(); ctx.roundRect(bW / 2 - 2 * scale, bY + bH - 1*scale + scratchReach, 3 * scale, 3.5 * scale, 1); ctx.fill();
+            let jumpTuck = isJump ? -2*scale : 0;
+            ctx.beginPath(); ctx.roundRect(-bW / 2 + 7 * scale, bY + bH - 1*scale + scratchReach + jumpTuck, 3 * scale, 3.5 * scale, 1); ctx.fill();
+            ctx.beginPath(); ctx.roundRect(bW / 2 - 2 * scale, bY + bH - 1*scale + scratchReach + jumpTuck, 3 * scale, 3.5 * scale, 1); ctx.fill();
         }
 
         // Head
@@ -181,7 +248,6 @@ class Cat {
         ctx.fillStyle = c.body; 
         ctx.beginPath(); ctx.roundRect(hX, hY, hW, hH, 3*scale); ctx.fill();
         
-        // Head stripes/patterns
         ctx.fillStyle = c.stripe; 
         if (this.breed === "orange" || this.breed === "tabby") { 
             ctx.fillRect(hX + 3 * scale, hY, 1.5 * scale, 3 * scale); 
@@ -193,15 +259,13 @@ class Cat {
             ctx.fillStyle = c.stripe; ctx.beginPath(); ctx.roundRect(hX+2*scale, hY+2*scale, hW-4*scale, hH-2*scale, 2*scale); ctx.fill();
         }
         
-        // Ears
         ctx.fillStyle = c.ear; 
         ctx.beginPath(); ctx.moveTo(hX, hY+3*scale); ctx.lineTo(hX, hY-3*scale); ctx.lineTo(hX+5*scale, hY+1*scale); ctx.fill();
         ctx.beginPath(); ctx.moveTo(hX+hW, hY+3*scale); ctx.lineTo(hX+hW, hY-3*scale); ctx.lineTo(hX+hW-5*scale, hY+1*scale); ctx.fill();
-        ctx.fillStyle = "#f1948a"; // inner
+        ctx.fillStyle = "#f1948a";
         ctx.beginPath(); ctx.moveTo(hX+1*scale, hY+2*scale); ctx.lineTo(hX+1*scale, hY-1*scale); ctx.lineTo(hX+3*scale, hY+1*scale); ctx.fill();
         ctx.beginPath(); ctx.moveTo(hX+hW-1*scale, hY+2*scale); ctx.lineTo(hX+hW-1*scale, hY-1*scale); ctx.lineTo(hX+hW-3*scale, hY+1*scale); ctx.fill();
 
-        // Eyes
         ctx.fillStyle = "#111111"; 
         if (isSleep) { 
             ctx.fillRect(hX + 3 * scale, hY + 6 * scale, 2.5 * scale, 1 * scale); 
@@ -209,24 +273,22 @@ class Cat {
         } else { 
             ctx.fillRect(hX + 3 * scale, hY + 4 * scale, 2 * scale, 2.5 * scale); 
             ctx.fillRect(hX + hW - 5 * scale, hY + 4 * scale, 2 * scale, 2.5 * scale); 
-            ctx.fillStyle = "#ffffff"; // glint
+            ctx.fillStyle = "#ffffff"; 
             ctx.fillRect(hX + 3 * scale, hY + 4 * scale, 1 * scale, 1 * scale);
             ctx.fillRect(hX + hW - 5 * scale, hY + 4 * scale, 1 * scale, 1 * scale);
         }
         
-        // Nose and mouth
         ctx.fillStyle = "#f1948a"; 
         ctx.fillRect(hX + hW / 2 - 1 * scale, hY + 6.5 * scale, 2 * scale, 1 * scale);
         ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.fillRect(hX + hW / 2 - 0.5 * scale, hY + 7.5 * scale, 1 * scale, 1 * scale);
         
-        // Buff Effect
         if (this.polishBuff) {
             ctx.fillStyle = "rgba(255, 215, 0, 0.3)"; 
             ctx.beginPath(); ctx.arc(hX + hW/2, hY + hH/2, hW + Math.sin(Date.now()/100)*2*scale, 0, Math.PI*2); ctx.fill();
         }
 
-        // Collar / Item
+        // Draw Bead Item on Cat
         if (this.item && GAME_DATA.ITEMS[this.item]) { 
             const data = GAME_DATA.ITEMS[this.item]; 
             const p = this.itemPolish / 100; 
@@ -239,17 +301,7 @@ class Cat {
                 const dist = 4 * scale;
                 const bx = neckX + Math.cos(angle) * dist; 
                 const by = neckY + Math.sin(angle) * dist * 0.6;
-                
-                let color = [150, 150, 150]; 
-                if (data.isDuobao && this.itemBeadColors && Array.isArray(this.itemBeadColors) && this.itemBeadColors.length > 0) {
-                    const bCol = this.itemBeadColors[i % this.itemBeadColors.length];
-                    if (Array.isArray(bCol) && bCol.length >= 3) color = [...bCol];
-                } else if (data.colorStart && data.colorEnd) {
-                    color[0] = Math.floor(data.colorStart[0] + (data.colorEnd[0] - data.colorStart[0]) * p);
-                    color[1] = Math.floor(data.colorStart[1] + (data.colorEnd[1] - data.colorStart[1]) * p);
-                    color[2] = Math.floor(data.colorStart[2] + (data.colorEnd[2] - data.colorStart[2]) * p);
-                }
-                Renderer.drawBead(ctx, bx, by, beadRadius, p, this.item, color);
+                Renderer.drawBead(ctx, bx, by, beadRadius, p, this.item, this.itemBeadColors ? this.itemBeadColors[i%this.itemBeadColors.length] : null);
             }
         }
         ctx.restore();

@@ -7,10 +7,10 @@ const Renderer = {
         this.canvas = canvasElement;
         this.ctx = canvasElement.getContext("2d", { alpha: false });
         
-        // Init static flowers for garden to prevent jittering
+        // Static flowers for garden
         for(let i=0; i<20; i++) {
             this.flowers.push({
-                x: 50 + Math.random()*700,
+                x: 50 + Math.random()*540,
                 y: 160 + Math.random()*150,
                 color: ["#e74c3c", "#f1c40f", "#9b59b6"][Math.floor(Math.random()*3)]
             });
@@ -19,32 +19,55 @@ const Renderer = {
 
     drawBead(ctx, bx, by, radius, p, itemType, beadColor) {
         let finalColor = [150, 150, 150]; 
-        if (Array.isArray(beadColor) && beadColor.length >= 3) {
-            finalColor = [beadColor[0] || 150, beadColor[1] || 150, beadColor[2] || 150];
+        let isSingleGradient = false;
+        let c1, c2;
+
+        if (beadColor && beadColor.isSingleGradient) {
+            isSingleGradient = true;
+            c1 = [...beadColor.c1];
+            c2 = [...beadColor.c2];
+        } else if (Array.isArray(beadColor) && beadColor.length >= 3) {
+            finalColor = [beadColor[0], beadColor[1], beadColor[2]];
+        } else if (GAME_DATA.ITEMS[itemType] && GAME_DATA.ITEMS[itemType].colorStart) {
+            const data = GAME_DATA.ITEMS[itemType];
+            finalColor[0] = Math.floor(data.colorStart[0] + (data.colorEnd[0] - data.colorStart[0]) * p);
+            finalColor[1] = Math.floor(data.colorStart[1] + (data.colorEnd[1] - data.colorStart[1]) * p);
+            finalColor[2] = Math.floor(data.colorStart[2] + (data.colorEnd[2] - data.colorStart[2]) * p);
         }
 
-        if (itemType === "bodhi") { 
-            finalColor[0] = Math.max(0, finalColor[0] - 30 - p*30);
-            finalColor[1] = Math.max(0, finalColor[1] - 20 - p*30);
-            finalColor[2] = Math.max(0, finalColor[2] - 10 - p*30);
+        // Apply Bodhi special darkening polish
+        if (itemType === "bodhi") {
+            if (isSingleGradient) {
+                c1 = c1.map((c, i) => Math.max(0, c - (i===0?30:20) - p*30));
+                c2 = c2.map((c, i) => Math.max(0, c - (i===0?30:20) - p*30));
+            } else {
+                finalColor = finalColor.map((c, i) => Math.max(0, c - (i === 0 ? 30 : 20) - p*30));
+            }
         }
-        
-        // Base Drop Shadow for 3D effect
+
+        // Drop Shadow
         ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.beginPath(); ctx.arc(bx + radius*0.2, by + radius*0.2, radius, 0, Math.PI*2); ctx.fill();
 
         // Main Bead
-        ctx.fillStyle = `rgb(${finalColor[0]},${finalColor[1]},${finalColor[2]})`;
+        if (isSingleGradient) {
+            const gradDir = ctx.createLinearGradient(bx-radius, by-radius, bx+radius, by+radius);
+            gradDir.addColorStop(0, `rgb(${c1[0]},${c1[1]},${c1[2]})`);
+            gradDir.addColorStop(1, `rgb(${c2[0]},${c2[1]},${c2[2]})`);
+            ctx.fillStyle = gradDir;
+        } else {
+            ctx.fillStyle = `rgb(${finalColor[0]},${finalColor[1]},${finalColor[2]})`;
+        }
         ctx.beginPath(); ctx.arc(bx, by, radius, 0, Math.PI * 2); ctx.fill();
 
-        // Inner Bevel / Gradient
+        // Inner Bevel (3D effect)
         const grad = ctx.createRadialGradient(bx-radius*0.3, by-radius*0.3, 0, bx, by, radius);
         grad.addColorStop(0, "rgba(255,255,255,0.2)");
-        grad.addColorStop(1, "rgba(0,0,0,0.3)");
+        grad.addColorStop(1, "rgba(0,0,0,0.4)");
         ctx.fillStyle = grad;
         ctx.beginPath(); ctx.arc(bx, by, radius, 0, Math.PI*2); ctx.fill();
 
-        // Detail texturing
+        // Specific Textures
         if (itemType === "xingyue") {
             ctx.fillStyle = "#1e272e"; 
             ctx.fillRect(bx - radius*0.3, by - radius*0.2, 1.5, 1.5);
@@ -61,7 +84,7 @@ const Renderer = {
             ctx.beginPath(); ctx.arc(bx, by+radius*0.2, radius*0.6, Math.PI*1.2, Math.PI*1.8); ctx.stroke();
         }
 
-        // Specular highlight (Gloss)
+        // Specular highlight
         if (p > 0.1) {
             ctx.fillStyle = `rgba(255,255,255,${0.3 + p * 0.5})`;
             ctx.beginPath(); ctx.ellipse(bx - radius * 0.4, by - radius * 0.4, radius * 0.3, radius*0.15, Math.PI/4, 0, Math.PI * 2); ctx.fill();
@@ -101,25 +124,33 @@ const Renderer = {
         ctx.restore();
     },
 
+    drawPiano(ctx, x, y) {
+        ctx.save(); ctx.translate(x, y);
+        ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(-50, 60, 100, 10); // shadow
+        ctx.fillStyle = "#2c3e50"; ctx.fillRect(-50, -40, 100, 100); // body
+        ctx.fillStyle = "#1a252f"; ctx.fillRect(-45, -30, 90, 30); // stand
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(-50, 20, 100, 10); // keys
+        for(let i=-45; i<50; i+=8) { ctx.fillStyle="#000"; ctx.fillRect(i, 20, 4, 6); }
+        ctx.restore();
+    },
+
     drawWindow(ctx, x, y, width, height, type) {
         ctx.save(); ctx.translate(x, y);
-        ctx.fillStyle = "#87CEEB"; // pure sky blue
+        ctx.fillStyle = "#87CEEB"; // pure sky
         ctx.fillRect(0, 0, width, height);
         
-        // Window Frame
         ctx.strokeStyle = "#ecf0f1"; ctx.lineWidth = 10;
         if(type==="cozy") { ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 15; }
         if(type==="garden") { ctx.strokeStyle = "#d2b48c"; ctx.lineWidth = 12; }
         ctx.strokeRect(0, 0, width, height);
         ctx.beginPath(); ctx.moveTo(width/2, 0); ctx.lineTo(width/2, height); ctx.moveTo(0, height/2); ctx.lineTo(width, height/2); ctx.stroke();
-        // Removed diagonal slash
         ctx.restore();
     },
 
     drawSceneBackground(ctx) {
-        const cw = this.canvas.width;
-        const ch = this.canvas.height; // Now 480
-        const floorY = 200; // adjusted for 480 height
+        const cw = this.canvas.width;  // 640
+        const ch = this.canvas.height; // 480
+        const floorY = 240; 
 
         if (GameState.currentRoom === "default") {
             ctx.fillStyle = "#ecf0f1"; ctx.fillRect(0, 0, cw, floorY); 
@@ -127,9 +158,9 @@ const Renderer = {
             ctx.fillStyle = "#7f8c8d"; ctx.fillRect(0, floorY-10, cw, 10); 
             ctx.fillStyle = "#bdc3c7"; ctx.fillRect(0, floorY, cw, ch - floorY); 
             
-            this.drawWindow(ctx, 350, 20, 100, 120, "default");
-            this.drawSofa(ctx, 180, 200);
-            this.drawDesk(ctx, 600, 190);
+            this.drawWindow(ctx, 270, 30, 100, 120, "default");
+            this.drawSofa(ctx, 150, 230);
+            this.drawDesk(ctx, 450, 210);
         } 
         else if (GameState.currentRoom === "cozy") {
             ctx.fillStyle = "#f5deb3"; ctx.fillRect(0, 0, cw, floorY); 
@@ -137,11 +168,14 @@ const Renderer = {
             ctx.fillStyle = "#8b4513"; ctx.fillRect(0, floorY-10, cw, 10); 
             ctx.fillStyle = "#d2b48c"; ctx.fillRect(0, floorY, cw, ch - floorY); 
             
-            this.drawWindow(ctx, 100, 20, 150, 140, "cozy");
-            ctx.fillStyle = "#8b4513"; ctx.fillRect(500, 30, 120, 80); ctx.fillStyle="#ecf0f1"; ctx.fillRect(510, 40, 100, 60);
-            ctx.fillStyle = "#e74c3c"; ctx.beginPath(); ctx.arc(560, 70, 15, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = "#2c3e50"; ctx.fillRect(700, 60, 5, 140); ctx.fillStyle="#f1c40f"; ctx.beginPath(); ctx.moveTo(680, 60); ctx.lineTo(725, 60); ctx.lineTo(710, 20); ctx.lineTo(695, 20); ctx.fill();
-            this.drawDiningTable(ctx, 400, 220);
+            this.drawWindow(ctx, 50, 30, 150, 140, "cozy");
+            // Painting
+            ctx.fillStyle = "#8b4513"; ctx.fillRect(400, 40, 120, 80); ctx.fillStyle="#ecf0f1"; ctx.fillRect(410, 50, 100, 60);
+            ctx.fillStyle = "#e74c3c"; ctx.beginPath(); ctx.arc(460, 80, 15, 0, Math.PI*2); ctx.fill();
+            // Lamp
+            ctx.fillStyle = "#2c3e50"; ctx.fillRect(580, 70, 5, 140); ctx.fillStyle="#f1c40f"; ctx.beginPath(); ctx.moveTo(560, 70); ctx.lineTo(605, 70); ctx.lineTo(590, 30); ctx.lineTo(575, 30); ctx.fill();
+            
+            this.drawDiningTable(ctx, 350, 240);
         }
         else if (GameState.currentRoom === "garden") {
             if (GameState.currentSubScene === "f1") {
@@ -149,30 +183,34 @@ const Renderer = {
                 ctx.fillStyle = "#b2babb"; ctx.fillRect(0, floorY-10, cw, 10); 
                 ctx.fillStyle = "#d0d3d4"; ctx.fillRect(0, floorY, cw, ch - floorY); 
                 
-                this.drawWindow(ctx, 400, 20, 120, 150, "garden");
+                this.drawWindow(ctx, 260, 30, 120, 150, "garden");
+                // Stairs
                 ctx.fillStyle = "#8b4513"; 
                 for(let i=0; i<6; i++) { ctx.fillRect(0, floorY-10 - i*30, 150 - i*20, 30); ctx.fillStyle="#a0522d"; ctx.fillRect(0, floorY-10 - i*30, 150 - i*20, 5); ctx.fillStyle="#8b4513"; }
-                this.drawSofa(ctx, 650, 210);
+                this.drawSofa(ctx, 500, 210);
             } 
             else if (GameState.currentSubScene === "f2") {
                 ctx.fillStyle = "#f4f6f7"; ctx.fillRect(0, 0, cw, floorY); 
                 ctx.fillStyle = "#99a3a4"; ctx.fillRect(0, floorY-10, cw, 10); 
                 ctx.fillStyle = "#e5e8e8"; ctx.fillRect(0, floorY, cw, ch - floorY); 
                 
-                this.drawWindow(ctx, 100, 20, 100, 120, "garden");
-                this.drawWindow(ctx, 600, 20, 100, 120, "garden");
-                ctx.fillStyle = "#5c4033"; ctx.fillRect(300, 10, 150, 170); ctx.fillStyle="#8b4513"; ctx.fillRect(310, 20, 130, 150);
-                for(let i=0; i<4; i++) { ctx.fillStyle="#5c4033"; ctx.fillRect(310, 50+i*30, 130, 5); }
-                ctx.fillStyle = "#e74c3c"; ctx.fillRect(320, 30, 15, 20); ctx.fillStyle = "#3498db"; ctx.fillRect(340, 25, 10, 25);
-                this.drawDesk(ctx, 400, 220);
-                ctx.fillStyle = "#000"; ctx.fillRect(380, 210, 15, 15); 
-                ctx.strokeStyle = "#bdc3c7"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(390, 215); ctx.lineTo(410, 200); ctx.stroke(); 
+                this.drawWindow(ctx, 50, 30, 100, 120, "garden");
+                this.drawWindow(ctx, 480, 30, 100, 120, "garden");
+                // Bookshelf
+                ctx.fillStyle = "#5c4033"; ctx.fillRect(180, 20, 150, 170); ctx.fillStyle="#8b4513"; ctx.fillRect(190, 30, 130, 150);
+                for(let i=0; i<4; i++) { ctx.fillStyle="#5c4033"; ctx.fillRect(190, 60+i*30, 130, 5); }
+                ctx.fillStyle = "#e74c3c"; ctx.fillRect(200, 40, 15, 20); ctx.fillStyle = "#3498db"; ctx.fillRect(220, 35, 10, 25);
+                
+                this.drawDesk(ctx, 300, 220); // Desk with ink
+                ctx.fillStyle = "#000"; ctx.fillRect(280, 210, 15, 15); // ink
+                ctx.strokeStyle = "#bdc3c7"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(290, 215); ctx.lineTo(310, 200); ctx.stroke(); // pen
+                
+                this.drawPiano(ctx, 500, 210);
             }
             else if (GameState.currentSubScene === "garden") {
                 ctx.fillStyle = "#a9dfbf"; ctx.fillRect(0, 0, cw, 150); 
                 ctx.fillStyle = "#2ecc71"; ctx.fillRect(0, 150, cw, ch - 150); 
                 
-                // Static flowers to avoid jitter
                 this.flowers.forEach(f => {
                     ctx.fillStyle = "#27ae60"; ctx.fillRect(f.x, f.y, 3, 20);
                     ctx.fillStyle = f.color;
@@ -180,10 +218,10 @@ const Renderer = {
                 });
                 
                 ctx.fillStyle = "#1e8449";
-                ctx.beginPath(); ctx.ellipse(400, 250, 60, 40, 0, 0, Math.PI*2); ctx.fill(); 
-                ctx.beginPath(); ctx.ellipse(360, 200, 30, 25, 0, 0, Math.PI*2); ctx.fill(); 
-                ctx.beginPath(); ctx.moveTo(340, 180); ctx.lineTo(350, 150); ctx.lineTo(370, 180); ctx.fill(); 
-                ctx.beginPath(); ctx.moveTo(370, 180); ctx.lineTo(380, 150); ctx.lineTo(390, 180); ctx.fill(); 
+                ctx.beginPath(); ctx.ellipse(320, 250, 60, 40, 0, 0, Math.PI*2); ctx.fill(); 
+                ctx.beginPath(); ctx.ellipse(280, 200, 30, 25, 0, 0, Math.PI*2); ctx.fill(); 
+                ctx.beginPath(); ctx.moveTo(260, 180); ctx.lineTo(270, 150); ctx.lineTo(290, 180); ctx.fill(); 
+                ctx.beginPath(); ctx.moveTo(290, 180); ctx.lineTo(300, 150); ctx.lineTo(310, 180); ctx.fill(); 
             }
         }
     },
@@ -201,38 +239,37 @@ const Renderer = {
 
     drawPixelCatTree(ctx, x, y) {
         ctx.save(); ctx.translate(x, y);
-        ctx.fillStyle = "#5c4033"; ctx.fillRect(-50, 0, 100, 20);
-        ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(-50, 20, 100, 5); 
-        ctx.fillStyle = "#d2b48c"; ctx.fillRect(-25, -150, 20, 150); ctx.fillRect(15, -80, 20, 80);
+        ctx.fillStyle = "#5c4033"; ctx.fillRect(-40, 0, 80, 20);
+        ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(-40, 20, 80, 5); 
+        ctx.fillStyle = "#d2b48c"; ctx.fillRect(-20, -120, 15, 120); ctx.fillRect(10, -60, 15, 60);
         ctx.strokeStyle = "#c8a064"; ctx.lineWidth = 2;
-        ctx.beginPath(); for(let i=10; i<=140; i+=8) { ctx.moveTo(-25, -i); ctx.lineTo(-5, -i+4); } ctx.stroke();
-        ctx.beginPath(); for(let i=10; i<=70; i+=8) { ctx.moveTo(15, -i); ctx.lineTo(35, -i+4); } ctx.stroke();
-        ctx.fillStyle = "#8b4513"; ctx.roundRect(0, -80, 60, 15, 3); ctx.fill();
-        ctx.fillStyle = "#a0522d"; ctx.roundRect(2, -80, 56, 8, 3); ctx.fill(); 
-        ctx.fillStyle = "#8b4513"; ctx.roundRect(-60, -150, 70, 15, 3); ctx.fill();
-        ctx.fillStyle = "#a0522d"; ctx.roundRect(-58, -150, 66, 8, 3); ctx.fill();
+        ctx.beginPath(); for(let i=10; i<=110; i+=8) { ctx.moveTo(-20, -i); ctx.lineTo(-5, -i+4); } ctx.stroke();
+        ctx.beginPath(); for(let i=10; i<=50; i+=8) { ctx.moveTo(10, -i); ctx.lineTo(25, -i+4); } ctx.stroke();
+        ctx.fillStyle = "#8b4513"; ctx.roundRect(-5, -60, 50, 12, 3); ctx.fill();
+        ctx.fillStyle = "#a0522d"; ctx.roundRect(-3, -60, 46, 6, 3); ctx.fill(); 
+        ctx.fillStyle = "#8b4513"; ctx.roundRect(-45, -120, 55, 12, 3); ctx.fill();
+        ctx.fillStyle = "#a0522d"; ctx.roundRect(-43, -120, 51, 6, 3); ctx.fill();
         ctx.restore();
     },
 
     drawPixelScratchBoard(ctx, x, y) {
         ctx.save(); ctx.translate(x, y);
-        // Larger board
-        ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(-65, 10, 130, 10);
+        ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(-55, 10, 110, 10);
         ctx.fillStyle = "#8b4513"; 
-        ctx.beginPath(); ctx.moveTo(-60, 10); ctx.lineTo(60, 10); ctx.lineTo(80, -70); ctx.lineTo(-40, -70); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-50, 10); ctx.lineTo(50, 10); ctx.lineTo(70, -60); ctx.lineTo(-30, -60); ctx.closePath(); ctx.fill();
         ctx.fillStyle = "#d2b48c"; 
-        ctx.beginPath(); ctx.moveTo(-50, 5); ctx.lineTo(50, 5); ctx.lineTo(67, -65); ctx.lineTo(-23, -65); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-40, 5); ctx.lineTo(40, 5); ctx.lineTo(57, -55); ctx.lineTo(-23, -55); ctx.closePath(); ctx.fill();
         ctx.strokeStyle = "#c8a064"; ctx.lineWidth=2;
-        for(let i=0; i<15; i++) { ctx.beginPath(); ctx.moveTo(-45+i*5, 0-i*4); ctx.lineTo(45+i*5, 0-i*4); ctx.stroke(); }
+        for(let i=0; i<12; i++) { ctx.beginPath(); ctx.moveTo(-35+i*5, 0-i*4); ctx.lineTo(35+i*5, 0-i*4); ctx.stroke(); }
         ctx.restore();
     },
 
     drawPixelCatBed(ctx, x, y) {
         ctx.save(); ctx.translate(x, y);
-        ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(0, 10, 55, 20, 0, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = "#cd5c5c"; ctx.beginPath(); ctx.ellipse(0, 0, 60, 25, 0, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = "#a52a2a"; ctx.beginPath(); ctx.ellipse(0, 5, 55, 18, 0, 0, Math.PI*2); ctx.fill(); 
-        ctx.fillStyle = "#f08080"; ctx.beginPath(); ctx.ellipse(0, 3, 48, 14, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.beginPath(); ctx.ellipse(0, 10, 45, 15, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#cd5c5c"; ctx.beginPath(); ctx.ellipse(0, 0, 50, 20, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#a52a2a"; ctx.beginPath(); ctx.ellipse(0, 5, 45, 15, 0, 0, Math.PI*2); ctx.fill(); 
+        ctx.fillStyle = "#f08080"; ctx.beginPath(); ctx.ellipse(0, 3, 38, 12, 0, 0, Math.PI*2); ctx.fill();
         ctx.restore();
     }
 };

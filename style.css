@@ -13,7 +13,7 @@ body {
 #game-container {
     display: flex;
     gap: 20px;
-    max-width: 1200px;
+    max-width: 1050px; /* Reduced since Canvas width is now 640 */
     width: 100%;
 }
 
@@ -21,7 +21,7 @@ body {
     background-color: #2c3e50;
     padding: 20px;
     border-radius: 10px;
-    width: 320px;
+    width: 300px;
     display: flex;
     flex-direction: column;
     box-shadow: 0 4px 6px rgba(0,0,0,0.5);
@@ -32,14 +32,14 @@ h1 {
     text-align: center;
     color: #f1c40f;
     margin-top: 0;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
 }
 
 .panel-section {
     background-color: #34495e;
-    padding: 15px;
+    padding: 12px;
     border-radius: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     border: 1px solid #1abc9c;
 }
 
@@ -53,6 +53,7 @@ h1 {
     margin-top: 0;
     color: #1abc9c;
     font-weight: bold;
+    margin-bottom: 5px;
 }
 
 .item-details {
@@ -62,7 +63,7 @@ h1 {
     border-left: 2px solid #f1c40f;
     padding-left: 5px;
     font-family: monospace;
-    height: 38px; /* Fixed height to prevent layout jumping */
+    height: 35px; /* Fixed height to prevent jumping */
 }
 
 .flex-btn-group {
@@ -89,12 +90,12 @@ button {
     background-color: #3498db;
     color: white;
     border: none;
-    padding: 8px 12px;
+    padding: 8px 6px;
     border-radius: 5px;
     cursor: pointer;
     font-weight: bold;
     transition: background 0.2s, opacity 0.2s;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     width: 100%;
 }
 
@@ -118,10 +119,10 @@ button:disabled {
 .btn-red { background: #c0392b; border: 1px solid #e74c3c; }
 .btn-green { background: #27ae60; border: 1px solid #2ecc71; }
 .btn-orange { background: #d35400; border: 1px solid #e67e22; }
-.btn-shop { background: #f39c12; color: #2c3e50; border: 1px solid #f1c40f; }
+.btn-shop { background: #f39c12; color: #2c3e50; border: 1px solid #f1c40f; font-size:0.9rem; padding: 10px; }
 
 .btn-hand {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     background: transparent;
     border: none;
     margin-left: 10px;
@@ -135,8 +136,8 @@ button:disabled {
     flex-grow: 1;
     margin-bottom: 0;
     overflow-y: auto;
-    font-size: 0.85rem;
-    max-height: 120px;
+    font-size: 0.8rem;
+    max-height: 100px;
 }
 
 ul {
@@ -167,7 +168,7 @@ li {
 
 .shop-content {
     background-color: #2c3e50;
-    width: 500px;
+    width: 450px;
     max-width: 90%;
     max-height: 90%;
     overflow-y: auto;
@@ -185,19 +186,19 @@ li {
     margin-bottom: 15px;
 }
 
-.shop-header h3 { margin: 0; color: #f1c40f; }
-.shop-header button { width: auto; }
+.shop-header h3 { margin: 0; color: #f1c40f; font-size:1.2rem; }
+.shop-header button { width: auto; padding: 5px 15px; }
 
 .shop-sections {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
 }
 
 .shop-section {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     border-bottom: 1px solid #34495e;
     padding-bottom: 15px;
 }
@@ -205,21 +206,20 @@ li {
 .shop-section h4 {
     margin: 0 0 5px 0;
     color: #1abc9c;
+    font-size: 0.95rem;
 }
 
-/* 右侧 Canvas 和光照层 */
+/* 右侧 Canvas 和光照层 (4:3) */
 #canvas-container {
     background-color: #000;
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-    flex: 1;
-    min-width: 400px;
-    /* Aspect ratio for 800x480 */
-    aspect-ratio: 800 / 480; 
-    height: auto;
-    max-height: 100%;
+    flex: none; /* Do not stretch flexibly, respect aspect ratio */
+    width: 640px; /* Fixed 4:3 size */
+    height: 480px;
     position: relative;
+    margin: auto 0; /* Center vertically if container is taller */
 }
 
 #gameCanvas {
@@ -228,14 +228,14 @@ li {
     height: 100%;
 }
 
-/* 光照遮罩：根据真实时间变色 */
+/* 光照遮罩 */
 #day-night-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none; /* 让鼠标穿透遮罩点击猫咪 */
+    pointer-events: none;
     background-color: rgba(0,0,0,0);
-    transition: background-color 1s; /* 平滑过渡 */
+    transition: background-color 1s;
 }

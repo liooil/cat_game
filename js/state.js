@@ -18,7 +18,7 @@ const GameState = {
     salmonCount: 0,
     unlockedRooms: ["default"],
     currentRoom: "default",
-    currentSubScene: "f1", // "f1", "f2", "garden" - only used when room is garden
+    currentSubScene: "f1", // "f1", "f2", "garden"
     totalFurnitureBonus: 0,
     
     worldTimeString: "白天"
