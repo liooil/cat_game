@@ -11,7 +11,7 @@ window.addEventListener('DOMContentLoaded', () => {
     UI.init();
 
     // Setup initial game state
-    UI.addLog("🐾 欢迎来到像素猫猫文玩店！");
+    UI.addLog("🐾 欢迎来到星露谷风的像素猫猫文玩店！");
     GameState.cats.push(new Cat("orange", 320, 360));
     GameState.selectedCatIndex = 0;
     
@@ -44,12 +44,22 @@ function gameLoop(time) {
         if (dt > 50) dt = 50; // Cap dt to prevent tunneling
         GameState.lastTime = time;
 
+        // Player energy regeneration logic
+        // Normal regeneration is extremely slow, relies on sleeping
+        if(GameState.energy < 100) {
+            GameState.energy = Math.min(100, GameState.energy + (dt/1000)*0.05);
+        }
+
         // Manual Polishing logic
         if (GameState.isPolishingCanvas && GameState.selectedItemIndex !== -1 && GameState.playerInventory[GameState.selectedItemIndex]) {
             const item = GameState.playerInventory[GameState.selectedItemIndex];
             if(GAME_DATA.ITEMS[item.type]) {
                 const difficulty = GAME_DATA.ITEMS[item.type].difficulty || 1.0;
-                item.polish += (dt / 1000) * (20.0 / difficulty); 
+                
+                // Player Energy Factor affects manual polishing too!
+                const energyFactor = 0.1 + (GameState.energy / 100) * 1.4; 
+                
+                item.polish += (dt / 1000) * (20.0 / difficulty) * energyFactor; 
                 if (item.polish > 100) item.polish = 100;
                 GameState.targetItemRotation += (dt / 1000) * Math.PI * 6; 
                 UI.updateInventoryDropdown();
@@ -80,6 +90,7 @@ function gameLoop(time) {
             ft.life -= dt / 1000;
             Renderer.ctx.fillStyle = `rgba(231, 76, 60, ${Math.max(0, ft.life)})`;
             if (ft.text === "✨") Renderer.ctx.fillStyle = `rgba(241, 196, 15, ${Math.max(0, ft.life)})`;
+            if (ft.text.includes("工作") || ft.text.includes("呼噜")) Renderer.ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, ft.life)})`;
             Renderer.ctx.font = "bold 24px Arial";
             Renderer.ctx.fillText(ft.text, ft.x, ft.y);
             if (ft.life <= 0) GameState.floatingTexts.splice(i, 1);
@@ -116,7 +127,7 @@ function gameLoop(time) {
                     if (data.isDuobao && item.beadColors && Array.isArray(item.beadColors) && item.beadColors.length > 0) {
                         const bCol = item.beadColors[i % item.beadColors.length];
                         if (bCol.isSingleGradient) {
-                             beadColor = bCol; // pass the object
+                             beadColor = bCol; 
                         } else if(Array.isArray(bCol) && bCol.length >= 3) {
                              beadColor = [...bCol];
                         }
@@ -138,7 +149,7 @@ function gameLoop(time) {
         }
         
         let targetCat = (GameState.selectedCatIndex > -1 && GameState.cats[GameState.selectedCatIndex]) ? GameState.cats[GameState.selectedCatIndex] : null;
-        if(targetCat) UI.update(targetCat);
+        UI.update(targetCat); // Always call to update Energy bars
 
     } catch (error) {
         console.error("Critical error in gameLoop! Rendering aborted.", error);

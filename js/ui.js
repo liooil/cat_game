@@ -14,7 +14,9 @@ const UI = {
             catItemValue: document.getElementById("cat-item-value"),
             logs: document.getElementById("game-log"),
             shopPanel: document.getElementById("shop-panel"),
-            sceneNav: document.getElementById("scene-nav")
+            sceneNav: document.getElementById("scene-nav"),
+            energyVal: document.getElementById("energy-val"),
+            energyBarFill: document.getElementById("energy-bar-fill")
         };
         this.bindEvents();
     },
@@ -90,6 +92,26 @@ const UI = {
             }
         });
 
+        // 玩家行为
+        this.safeBind("btn-work", "click", () => {
+            if (GameState.energy >= 50) {
+                GameState.energy -= 50;
+                GameState.gold += 500;
+                GameState.floatingTexts.push({ x: 320, y: 240, text: "💦 努力工作...", life: 1.5 });
+                this.addLog("出门打了一份临时工，赚到 500 金币，消耗 50 精力。");
+                this.update();
+            } else {
+                this.addLog("精力不足 50，无法去工作，请先睡觉休息！");
+            }
+        });
+
+        this.safeBind("btn-sleep", "click", () => {
+            GameState.energy = 100;
+            GameState.floatingTexts.push({ x: 320, y: 240, text: "💤 呼噜呼噜...", life: 1.5 });
+            this.addLog("睡了一觉，精力完全恢复了！(满精力将大幅提升全局包浆速度)");
+            this.update();
+        });
+
         const itemKeys = ["zijin", "kuka", "bodhi", "monkey", "xingyue"];
         itemKeys.forEach(key => {
             this.safeBind(`btn-buy-${key}`, "click", () => {
@@ -98,13 +120,13 @@ const UI = {
                 buyAndLog(itemData.cost, itemData.name, () => {
                     let beadColors = null;
                     if (key === "bodhi") {
-                        const style = Math.floor(Math.random() * 3); // 0, 1, 2
+                        const style = Math.floor(Math.random() * 3); 
                         let c1 = MORANDI_COLORS[Math.floor(Math.random()*MORANDI_COLORS.length)];
                         let c2 = MORANDI_COLORS[Math.floor(Math.random()*MORANDI_COLORS.length)];
                         beadColors = [];
-                        if (style === 0) { // Solid Morandi
+                        if (style === 0) { 
                             for(let i=0;i<18;i++) beadColors.push(c1);
-                        } else if (style === 1) { // Bead-to-bead gradient
+                        } else if (style === 1) { 
                             for(let i=0; i<18; i++) {
                                 let ratio = i/17;
                                 beadColors.push([
@@ -113,7 +135,7 @@ const UI = {
                                     c1[2]*(1-ratio) + c2[2]*ratio
                                 ]);
                             }
-                        } else { // Single bead internal gradient
+                        } else { 
                             for(let i=0; i<18; i++) beadColors.push({ isSingleGradient: true, c1: c1, c2: c2 });
                         }
                     } else if (itemData.isDuobao) {
@@ -212,10 +234,12 @@ const UI = {
             }
         });
 
-        this.safeBind("inventory-select", "change", (e) => {
-            GameState.selectedItemIndex = parseInt(e.target.value);
-            this.update();
-        });
+        if(this.elements.inventorySelect) {
+            this.elements.inventorySelect.addEventListener("change", (e) => {
+                GameState.selectedItemIndex = parseInt(e.target.value);
+                this.update();
+            });
+        }
 
         this.safeBind("btn-manual-polish", "mousedown", () => GameState.isPolishingCanvas = true);
         this.safeBind("btn-manual-polish", "mouseup", () => GameState.isPolishingCanvas = false);
@@ -233,7 +257,6 @@ const UI = {
                 let clickedCat = false;
                 for (let i = GameState.cats.length - 1; i >= 0; i--) {
                     const c = GameState.cats[i];
-                    // Relaxed hit box for 640x480 ratio
                     if (mouseX > c.x - 50 && mouseX < c.x + 50 && mouseY > c.y - 70 && mouseY < c.y + 30) {
                         GameState.selectedCatIndex = i;
                         clickedCat = true;
@@ -245,7 +268,6 @@ const UI = {
                     }
                 }
                 
-                // Allow manual polish clicking on bottom section
                 if (!clickedCat && mouseY > 330) {
                     GameState.isPolishingCanvas = true;
                 }
@@ -281,10 +303,20 @@ const UI = {
 
     update(activeCat = null) {
         if (!this.elements.gold) return;
+        
+        // Player stats
         this.elements.gold.innerText = Math.floor(GameState.gold);
+        this.elements.energyVal.innerText = Math.floor(GameState.energy);
+        this.elements.energyBarFill.style.width = `${GameState.energy}%`;
         
+        if (GameState.energy > 60) this.elements.energyBarFill.style.backgroundColor = "#2ecc71";
+        else if (GameState.energy > 20) this.elements.energyBarFill.style.backgroundColor = "#f1c40f";
+        else this.elements.energyBarFill.style.backgroundColor = "#e74c3c";
+
+        const btnWork = document.getElementById("btn-work");
+        if(btnWork) btnWork.disabled = GameState.energy < 50;
+
         const hasItem = GameState.selectedItemIndex !== -1;
-        
         const btnSell = document.getElementById("btn-sell");
         const btnManualPolish = document.getElementById("btn-manual-polish");
         if (btnSell) btnSell.disabled = !hasItem;

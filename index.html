@@ -3,32 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>像素猫猫盘手串 - 星露谷版</title>
+    <title>像素猫猫盘文玩 - 星露谷物语风</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="game-container">
         <!-- 左侧 UI 面板 -->
         <div id="ui-panel">
-            <h1>🐱 像素猫猫盘手串</h1>
+            <h1>🐱 像素猫猫盘文玩</h1>
             
-            <div class="panel-section stats">
-                <p style="margin-top:0;">💰 资金: <span id="gold" class="gold-text">150</span> 金币</p>
-                <p style="margin: 5px 0 0 0; font-size: 0.8rem; color:#bdc3c7;">
-                    时间: <span id="world-time">白天</span>
-                </p>
+            <!-- 玩家状态区 (新增: 资金, 精力, 时间) -->
+            <div class="panel-section player-stats">
+                <div class="flex-between">
+                    <p style="margin:0; font-weight:bold;">💰 资金: <span id="gold" class="gold-text">150</span></p>
+                    <p style="margin:0; font-size:0.8rem; color:#bdc3c7;">时间: <span id="world-time">白天</span></p>
+                </div>
+                <div style="margin-top: 8px;">
+                    <div class="flex-between" style="margin-bottom: 3px;">
+                        <span style="font-size:0.85rem; color:#f39c12;">⚡ 精力: <span id="energy-val">100</span>/100</span>
+                    </div>
+                    <div class="energy-bar-bg">
+                        <div id="energy-bar-fill" class="energy-bar-fill" style="width: 100%;"></div>
+                    </div>
+                </div>
+                <div class="flex-btn-group" style="margin-top: 8px;">
+                    <button id="btn-work" class="btn-orange">去工作 (+500金,-50⚡)</button>
+                    <button id="btn-sleep" class="btn-purple">睡觉 (满⚡)</button>
+                </div>
             </div>
 
             <!-- 当前猫咪状态与快捷互动 -->
-            <div class="panel-section stats">
+            <div class="panel-section cat-stats">
                 <p class="section-title">🐱 当前选中猫咪</p>
-                <p>品种: <span id="cat-breed">无</span></p>
-                <p>心情: <span id="cat-mood">0</span>%</p>
-                <p>佩戴: <span id="cat-item">无</span></p>
+                <div class="cat-info-row">品种: <span id="cat-breed">无</span></div>
+                <div class="cat-info-row">心情: <span id="cat-mood">0</span>%</div>
+                <div class="cat-info-row">佩戴: <span id="cat-item">无</span></div>
                 
-                <div id="cat-item-details" style="visibility:hidden;" class="item-details">
-                    包浆: <span id="cat-item-polish">0.00</span>%<br>
-                    估值: <span id="cat-item-value">0</span> 金币
+                <!-- 固定高度防止跳动 -->
+                <div class="item-details-container">
+                    <div id="cat-item-details" style="visibility:hidden;" class="item-details">
+                        包浆: <span id="cat-item-polish">0.00</span>%<br>
+                        估值: <span id="cat-item-value">0</span> 金币
+                    </div>
                 </div>
                 
                 <div class="flex-btn-group">
@@ -65,7 +81,7 @@
             </div>
 
             <!-- 功能控制区 -->
-            <div class="panel-section flex-btn-group" style="margin-top: 10px;">
+            <div class="panel-section flex-btn-group" style="margin-top: 10px; margin-bottom: 10px;">
                 <button id="btn-shop" class="btn-shop">🏪 家具与主题商店</button>
             </div>
 
@@ -82,16 +98,16 @@
             <!-- 日志区 -->
             <div class="panel-section log-container">
                 <ul id="game-log">
-                    <li>欢迎来到猫猫文玩店！</li>
+                    <li>欢迎来到星露谷猫猫文玩店！</li>
                 </ul>
             </div>
         </div>
 
-        <!-- 右侧 Canvas 渲染区 -->
+        <!-- 右侧 Canvas 渲染区 (4:3) -->
         <div id="canvas-container">
             <!-- 增加一层用来叠加随时间变化的光照遮罩 -->
             <div id="day-night-overlay"></div>
-            <!-- 修改比例为 4:3，640x480 -->
+            <!-- 严格 640x480 分辨率 -->
             <canvas id="gameCanvas" width="640" height="480"></canvas>
         </div>
     </div>
@@ -116,7 +132,7 @@
                 </div>
                 <div class="shop-section">
                     <h4>🏠 房间主题</h4>
-                    <button id="btn-buy-room-cozy">温馨小屋 (北欧风) (500金币)</button>
+                    <button id="btn-buy-room-cozy">温馨小屋 (北欧风厨房) (500金币)</button>
                     <button id="btn-buy-room-garden">花园洋房 (三场景) (1000金币)</button>
                 </div>
             </div>

@@ -82,7 +82,7 @@ class Cat {
                 in_bed: { x: 500, y: 340 },     // Inside bed
                 on_sofa_def: { x: 150, y: 230 },
                 on_desk_def: { x: 450, y: 200 },
-                on_oven_cozy: { x: 250, y: 150 }, // Jump to oven
+                on_oven_cozy: { x: 250, y: 150 }, // Cozy oven top
                 on_desk_f2: { x: 300, y: 220 },
                 on_piano_f2: { x: 500, y: 200 }
             };
@@ -97,7 +97,7 @@ class Cat {
                     possibleStates.push("on_sofa");
                 }
                 if (GameState.currentRoom === "cozy") {
-                    possibleStates.push("on_oven"); // replacing sofa logic with oven jump
+                    possibleStates.push("on_oven"); 
                 }
                 if (GameState.currentRoom === "default" || (GameState.currentRoom === "garden" && GameState.currentSubScene === "f2")) {
                     possibleStates.push("on_desk");
@@ -117,13 +117,13 @@ class Cat {
                 this.jumpTo(targets.scratching.x, targets.scratching.y, "scratching", 600);
                 return;
             } else if (nextState === "on_sofa") {
-                let tx = GameState.currentRoom === "default" ? targets.on_sofa_def.x : targets.on_sofa_def.x; // default
-                let ty = GameState.currentRoom === "default" ? targets.on_sofa_def.y : targets.on_sofa_def.y;
+                let tx = targets.on_sofa_def.x;
+                let ty = targets.on_sofa_def.y;
                 if(GameState.currentSubScene === "f1") { tx=480; ty=210; }
                 this.jumpTo(tx, ty, "on_sofa", 700);
                 return;
             } else if (nextState === "on_oven") {
-                this.jumpTo(targets.on_oven_cozy.x, targets.on_oven_cozy.y, "on_sofa", 700); // reuse on_sofa logic state for resting
+                this.jumpTo(targets.on_oven_cozy.x, targets.on_oven_cozy.y, "on_sofa", 700); // Reuse sitting state for resting
                 return;
             } else if (nextState === "on_desk") {
                 let tx = GameState.currentRoom === "default" ? targets.on_desk_def.x : targets.on_desk_f2.x;
@@ -163,16 +163,25 @@ class Cat {
 
     processPolish(dt) {
         if (this.item && GAME_DATA.ITEMS[this.item]) {
-            let polishRate = 0.5;
+            let polishRate = 0.5; // default
             if (this.state === "play" || this.state === "scratching") polishRate = 2.0;
             else if (this.state.includes("walk") || this.state === "on_cattree" || this.state === "jumping") polishRate = 1.0;
             
             const moodFactor = this.mood > 50 ? 1.0 : (this.mood > 20 ? 0.5 : 0.1);
             const buffMultiplier = this.polishBuff ? this.polishBuff.multiplier : 1.0;
+            
+            // 🔥 Player Energy Factor!
+            // 100 energy = 1.5x global speed; 0 energy = 0.1x global speed
+            const playerEnergyFactor = 0.1 + (GameState.energy / 100) * 1.4; 
+            
             const difficulty = GAME_DATA.ITEMS[this.item].difficulty || 1.0;
             
-            let increase = (dt / 1000) * (polishRate * moodFactor * buffMultiplier * 0.5 / difficulty + GameState.totalFurnitureBonus);
-            this.itemPolish = Math.min(100, this.itemPolish + increase);
+            let baseIncrease = polishRate * moodFactor * buffMultiplier * 0.5 / difficulty + GameState.totalFurnitureBonus;
+            
+            // Apply player energy factor
+            let finalIncrease = (dt / 1000) * (baseIncrease * playerEnergyFactor);
+            
+            this.itemPolish = Math.min(100, this.itemPolish + finalIncrease);
         }
     }
 
@@ -185,6 +194,7 @@ class Cat {
         const isScratch = this.state === "scratching";
         const isJump = this.state === "jumping";
         
+        // No vertical bounce for tail, just smooth body sway
         let bounceY = this.state.includes("walk") ? Math.sin(Date.now() / 150) * 1.5 : 0;
         
         const bW = 24 * scale; const bH = isSleep ? 8 * scale : 12 * scale; const bY = isSleep ? -8 * scale : -12 * scale;
@@ -227,7 +237,7 @@ class Cat {
             ctx.beginPath(); ctx.roundRect(bW / 2 - 6 * scale, bY + bH - 2*scale + jumpTuck, 3 * scale, 4 * scale, 2); ctx.fill();
         }
         
-        // Body
+        // Fluffy Body
         ctx.fillStyle = c.body; 
         ctx.beginPath(); ctx.roundRect(-bW / 2, bY, bW, bH, 4*scale); ctx.fill();
         
@@ -265,6 +275,7 @@ class Cat {
             ctx.fillStyle = c.stripe; ctx.beginPath(); ctx.roundRect(hX+2*scale, hY+2*scale, hW-4*scale, hH-2*scale, 2*scale); ctx.fill();
         }
         
+        // Ears
         ctx.fillStyle = c.ear; 
         ctx.beginPath(); ctx.moveTo(hX, hY+3*scale); ctx.lineTo(hX, hY-3*scale); ctx.lineTo(hX+5*scale, hY+1*scale); ctx.fill();
         ctx.beginPath(); ctx.moveTo(hX+hW, hY+3*scale); ctx.lineTo(hX+hW, hY-3*scale); ctx.lineTo(hX+hW-5*scale, hY+1*scale); ctx.fill();

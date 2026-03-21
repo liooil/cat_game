@@ -13,7 +13,7 @@ body {
 #game-container {
     display: flex;
     gap: 20px;
-    max-width: 1050px; /* Reduced since Canvas width is now 640 */
+    max-width: 1050px; /* Reduced for 640 canvas width */
     width: 100%;
 }
 
@@ -21,7 +21,7 @@ body {
     background-color: #2c3e50;
     padding: 20px;
     border-radius: 10px;
-    width: 300px;
+    width: 320px;
     display: flex;
     flex-direction: column;
     box-shadow: 0 4px 6px rgba(0,0,0,0.5);
@@ -31,7 +31,7 @@ body {
 h1 {
     text-align: center;
     color: #f1c40f;
-    margin-top: 0;
+    margin: 0 0 15px 0;
     font-size: 1.3rem;
 }
 
@@ -43,10 +43,30 @@ h1 {
     border: 1px solid #1abc9c;
 }
 
+/* 玩家状态特制 */
+.player-stats {
+    background-color: #293846; /* slightly darker */
+    border-color: #f39c12;
+}
+
+.energy-bar-bg {
+    width: 100%;
+    height: 12px;
+    background-color: #7f8c8d;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 3px;
+    border: 1px solid #2c3e50;
+}
+.energy-bar-fill {
+    height: 100%;
+    background-color: #f1c40f; /* Energy color */
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
 .gold-text {
     color: #f1c40f;
-    font-weight: bold;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
 }
 
 .section-title {
@@ -56,14 +76,23 @@ h1 {
     margin-bottom: 5px;
 }
 
+.cat-info-row {
+    font-size: 0.9rem;
+    margin-bottom: 3px;
+}
+
+.item-details-container {
+    height: 38px; /* FIXED HEIGHT to prevent button jumping */
+    margin: 5px 0 10px 10px;
+}
+
 .item-details {
     font-size: 0.9rem;
     color: #f1c40f;
-    margin: 5px 0 10px 10px;
     border-left: 2px solid #f1c40f;
     padding-left: 5px;
     font-family: monospace;
-    height: 35px; /* Fixed height to prevent jumping */
+    height: 100%; /* Fill container */
 }
 
 .flex-btn-group {
@@ -84,6 +113,7 @@ h1 {
     border: 1px solid #1abc9c;
     padding: 6px;
     border-radius: 4px;
+    font-size: 0.9rem;
 }
 
 button {
@@ -209,14 +239,14 @@ li {
     font-size: 0.95rem;
 }
 
-/* 右侧 Canvas 和光照层 (4:3) */
+/* 右侧 Canvas 和光照层 (严格 4:3 比例 640x480) */
 #canvas-container {
     background-color: #000;
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-    flex: none; /* Do not stretch flexibly, respect aspect ratio */
-    width: 640px; /* Fixed 4:3 size */
+    flex: none; /* Keep absolute size */
+    width: 640px; 
     height: 480px;
     position: relative;
     margin: auto 0; /* Center vertically if container is taller */
@@ -228,14 +258,14 @@ li {
     height: 100%;
 }
 
-/* 光照遮罩 */
+/* 光照遮罩：根据真实时间变色 */
 #day-night-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none;
+    pointer-events: none; /* 让鼠标穿透遮罩点击猫咪 */
     background-color: rgba(0,0,0,0);
-    transition: background-color 1s;
+    transition: background-color 1s; /* 平滑过渡 */
 }
